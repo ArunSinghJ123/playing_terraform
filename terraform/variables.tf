@@ -1,7 +1,7 @@
 variable "key_name"
 {
   description = "Desired name of AWS key pair"
-  default = "terraform-sample"
+  default = "terraform"
 }
 
 variable "aws_region" {
@@ -11,22 +11,21 @@ variable "aws_region" {
 
 variable "aws_vpc" {
   description = "AWS VPC Name."
-  default     = "vpc-47110a21"
+  default     = "VPC ID GOES HERE"
 }
 
 variable "aws_subnet" {
   description = "AWS Subnet Name."
-  default     = "subnet-20b6460c"
+  default     = "SUBNET NAME GOES HERE"
 }
 
 variable "aws_security_group" {
   description = "AWS SG Name."
-  default     = "sg-f00373b9"
+  default     = "SG GOES HERE"
 }
 
-# Ubuntu Precise 12.04 LTS (x64)
 variable "aws_ami" {
   default = {
-    us-east-1 = "ami-1853ac65"
+    us-east-1 = "AMI ID GOES HERE"
   }
 }
