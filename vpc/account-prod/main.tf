@@ -24,7 +24,9 @@ module "vpc" "east"{
   enable_dynamodb_endpoint = true
 
   enable_dhcp_options              = true
-  dhcp_options_domain_name         = "arunsingh.co"
+  enable_dns_support               = true
+  enable_dns_hostnames             = true
+  dhcp_options_domain_name         = "arunsinghjeya.co"
   dhcp_options_domain_name_servers = ["127.0.0.1", "10.10.0.2"]
   tags = {
     Owner       = "Arun"
@@ -55,7 +57,9 @@ module "urvpc" "east"{
   enable_dynamodb_endpoint = true
 
   enable_dhcp_options              = true
-  dhcp_options_domain_name         = "arunsingh.co"
+  enable_dns_support               = true
+  enable_dns_hostnames             = true
+  dhcp_options_domain_name         = "arunsinghjeya.co"
   dhcp_options_domain_name_servers = ["127.0.0.1", "172.16.0.2"]
 
   tags = {
@@ -82,6 +86,8 @@ locals {
   name_prefix         = ["${module.vpc.vpc_id}", "${module.urvpc.vpc_id}"]
 }
 
+# CREATION OF THE SECURITY GROUPS
+
 resource "aws_security_group" "http" {
   count       = 2
   name        = "HTTPfromOut"
@@ -91,7 +97,7 @@ resource "aws_security_group" "http" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["${element(local.vpc_cidr, count.index)}"]
+    cidr_blocks = ["${module.vpc.vpc_cidr_block}", "${module.urvpc.vpc_cidr_block}"]
   }
 
   tags = {
@@ -108,16 +114,41 @@ resource "aws_security_group" "app" {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = ["${element(local.vpc_cidr, count.index)}"]
+    cidr_blocks = ["${module.vpc.vpc_cidr_block}", "${module.urvpc.vpc_cidr_block}"]
   }
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
-    cidr_blocks = ["${element(local.vpc_cidr, count.index)}"]
+    cidr_blocks = ["${module.vpc.vpc_cidr_block}", "${module.urvpc.vpc_cidr_block}"]
   }
 
   tags = {
     Name = "AppfromOut"
   }
+}
+
+
+# CREATION OF THE PRIVATE AND PUBLIC HZ'S
+
+resource "aws_route53_zone" "public" {
+  name = "arunsinghjeya.co"
+}
+
+resource "aws_route53_zone" "private" {
+  name = "arunsinghjeya.co"
+
+  vpc {
+    vpc_id = "${module.vpc.vpc_id}"
+  }
+
+  lifecycle {
+    ignore_changes = ["vpc"]
+  }
+}
+
+
+resource "aws_route53_zone_association" "unroute" {
+  zone_id = "${aws_route53_zone.private.zone_id}"
+  vpc_id  = "${module.urvpc.vpc_id}"
 }
