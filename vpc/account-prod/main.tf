@@ -71,14 +71,11 @@ resource "aws_vpc_peering_connection" "foo" {
   peer_owner_id = "${data.aws_caller_identity.current.account_id}"
   peer_vpc_id   = "${module.urvpc.vpc_id}"
   vpc_id        = "${module.vpc.vpc_id}"
+  auto_accept   = true
+}
 
-  accepter {
-    allow_remote_vpc_dns_resolution = true
-  }
-
-  requester {
-    allow_remote_vpc_dns_resolution = true
-  }
+locals {
+  vpc_cidr         = ["${module.vpc.vpc_cidr_block}", "${module.urvpc.vpc_cidr_block}"]
 }
 
 locals {
@@ -93,11 +90,34 @@ resource "aws_security_group" "http" {
   ingress {
     from_port   = 80
     to_port     = 80
-    protocol    = "http"
-    cidr_blocks = ["10.0.0.0/8"]
+    protocol    = "tcp"
+    cidr_blocks = ["${element(local.vpc_cidr, count.index)}"]
   }
 
   tags = {
     Name = "HTTPfromOut"
+  }
+}
+
+resource "aws_security_group" "app" {
+  count       = 2
+  name        = "AppfromOut"
+  description = "Allow all App traffic"
+  vpc_id      = "${element(local.name_prefix, count.index)}"
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["${element(local.vpc_cidr, count.index)}"]
+  }
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["${element(local.vpc_cidr, count.index)}"]
+  }
+
+  tags = {
+    Name = "AppfromOut"
   }
 }
